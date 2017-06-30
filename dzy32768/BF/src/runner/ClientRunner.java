@@ -10,17 +10,18 @@ import service.IOService;
 import ui.MainFrame;
 
 public class ClientRunner {
+	/*
 	private RemoteHelper remoteHelper;
 	
 	public ClientRunner() {
 		linkToServer();
-		initGUI();
+		//initGUI();
 	}
 	
 	private void linkToServer() {
 		try {
 			remoteHelper = RemoteHelper.getInstance();
-			remoteHelper.setRemote(Naming.lookup("rmi://127.0.0.1:8887/DataRemoteObject"));
+			remoteHelper.setRemote(Naming.lookup("rmi://127.0.0.1:8887/DataRemoteObject"));			
 			System.out.println("linked");
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -35,6 +36,36 @@ public class ClientRunner {
 		MainFrame mainFrame = new MainFrame();
 	}
 	
+	
+	// IO service
+	public boolean writeFile(String file, String userId, String fileName)throws RemoteException {
+		return remoteHelper.getIOService().writeFile(file, userId, fileName);
+	}
+	
+	public String readFile(String userId, String fileName)throws RemoteException {
+		return remoteHelper.getIOService().readFile(userId, fileName);
+	}
+	
+	public String readFileList(String userId)throws RemoteException {
+		return remoteHelper.getIOService().readFileList(userId);
+	}
+	
+	
+	// User service	
+	public boolean login(String username, String password) throws RemoteException{
+		return remoteHelper.getUserService().login(username, password);
+	}
+
+	public boolean logout(String username) throws RemoteException {
+		return remoteHelper.getUserService().logout(username);
+	}
+	
+	
+	// execute service
+	public String execute(String code, String param) throws RemoteException {
+		return remoteHelper.getExecuteService().execute(code, param);
+	}
+	
 	public void test(){
 		try {
 			System.out.println(remoteHelper.getUserService().login("admin", "123456a"));
@@ -43,9 +74,10 @@ public class ClientRunner {
 			e.printStackTrace();
 		}
 	}
-	
+*/
 	public static void main(String[] args){
-		ClientRunner cr = new ClientRunner();
+		MainFrame mainFrame = new MainFrame();
+		//ClientRunner cr = new ClientRunner();
 		//cr.test();
 	}
 }

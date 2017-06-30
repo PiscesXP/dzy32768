@@ -6,6 +6,8 @@ import java.rmi.RemoteException;
 import service.ExecuteService;
 import service.UserService;
 
+import executeImpl.*;
+
 public class ExecuteServiceImpl implements ExecuteService {
 
 	/**
@@ -14,7 +16,20 @@ public class ExecuteServiceImpl implements ExecuteService {
 	@Override
 	public String execute(String code, String param) throws RemoteException {
 		// TODO Auto-generated method stub
-		return null;
+		if(code.contains("Ook")){
+			OOKExecute ooke = new OOKExecute();
+			return ooke.execute(code, param);
+		}
+		else{
+			BFExecute bfe = new BFExecute();
+			return bfe.execute(code, param);
+		}
 	}
-
+	/*
+	@Override
+	public byte[] getMemBytes() throws RemoteException{
+		return null;
+		
+	}
+*/
 }
