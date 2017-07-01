@@ -1,23 +1,12 @@
 package ui;
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
 
 import rmi.RemoteHelper;
-import runner.ClientRunner;
-
-import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import java.awt.event.MouseAdapter;
@@ -26,58 +15,139 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.HashSet;
-import java.util.Set;
-
+import java.util.ArrayList;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
-import javax.swing.JTextArea;
 import java.awt.Font;
-import javax.swing.JList;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
-import java.awt.Label;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
+import java.awt.event.InputMethodListener;
+import java.awt.event.InputMethodEvent;
 
 public class MainFrame extends JFrame {
 
 	private JPanel contentPane;
 	private JTextPane txtpnEditor;
 	private JTextPane txtpnInput;
-	
-	public static double zoomRatio=1.0;
+	private JTextPane textPnOutput;
 	
 	private JTable memoryTable;
 	private String memList[][];
 	
-	private RemoteHelper remoteHelper;
+	private JLabel labelUserName;
+		
+	private boolean isLogin=false;
+	private String account,password;
+	
+	private static RemoteHelper remoteHelper;
+	
+	ArrayList<codeVersion> historyCode = new ArrayList<codeVersion>();
+	private int currentVersion=0;
+	private int topVersion=0;
+	private boolean isReady=false;
+	private boolean isUserChange=true;
 	
 	// execute
 	private void pressRun(){
+		try {
+			setOutputText(remoteHelper.getExecuteService().execute(getEditorCode(), getInputText()));
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void login(){		
+		if(isLogin){
+			JOptionPane.showMessageDialog(null, "You are now login as " + account + ".", "Already login", JOptionPane.WARNING_MESSAGE);
+		}
+		while(!isLogin){
+			account=JOptionPane.showInputDialog(null,"Input your account:");
+			password=JOptionPane.showInputDialog(null,"Input your password:");
+			try {
+				isLogin=remoteHelper.getUserService().login(account, password);
+				if(isLogin){
+					JOptionPane.showMessageDialog(null, "You are now login as " + account + ".", "Success", JOptionPane.WARNING_MESSAGE);
+				}
+				else{
+					JOptionPane.showMessageDialog(null, "The account or password is incorrect.\r\nPlease try again.", "Login fail", JOptionPane.WARNING_MESSAGE);
+				}
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			labelUserName.setText(account);
+		}		
 		
 	}
 	
+	private void logout(){
+		isLogin=false;
+		account=null;
+		password=null;
+		labelUserName.setText("Guest");
+		JOptionPane.showMessageDialog(null, "Logout successful.", "Logout", JOptionPane.WARNING_MESSAGE);
+	}
+	
+	private void initCodeHistory(){
+		codeVersion cv = new codeVersion(txtpnEditor.getText(),0,0);
+		historyCode.add(0,cv);	
+		isReady=true;
+	}
+	
+	private void codeChange(){
+		if(!isReady || !isUserChange)
+			return;
+		++topVersion;
+		codeVersion cv = new codeVersion(txtpnEditor.getText(),topVersion,currentVersion);
+		historyCode.get(currentVersion).setNextVersion(topVersion);
+		historyCode.add(topVersion,cv);	
+		currentVersion=cv.getVersion();
+	}
+	
+	private void undo(){
+		isUserChange=false;
+		codeVersion currentCodeVersion = historyCode.get(currentVersion);
+		codeVersion preCodeVersion = historyCode.get(currentCodeVersion.getPreVersion());
+		txtpnEditor.setText(preCodeVersion.getCode());
+		currentVersion=preCodeVersion.getVersion();	
+		isUserChange=true;
+	}
+	
+	private void redo(){
+		isUserChange=false;
+		codeVersion currentCodeVersion = historyCode.get(currentVersion);
+		if(currentCodeVersion.getNextVersion()==-1){
+			return;
+		}
+		codeVersion nextCodeVersion = historyCode.get(currentCodeVersion.getNextVersion());
+		txtpnEditor.setText(nextCodeVersion.getCode());
+		currentVersion=nextCodeVersion.getVersion();
+		isUserChange=true;
+	}
+
 	public void setEditorCode(String code){
 		txtpnEditor.setText(code);
 	}	
-	
 	public String getEditorCode(){
 		return txtpnEditor.getText();
-	}
+	}	
 	
-	public void setConsoleText(String text){
+	public void setInputText(String text){
 		txtpnInput.setText(text);
 	}
-
+	public String getInputText(){
+		return txtpnInput.getText();
+	}	
+	
+	public void setOutputText(String text){
+		textPnOutput.setText(text);
+	}	
 	
 	/**
 	 * Create the frame.
@@ -87,15 +157,15 @@ public class MainFrame extends JFrame {
 		// 
 		linkToServer();
 		
+		JFrame frame = new JFrame("BF Client");
+		frame.setVisible(true);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setBounds(560, 240, 1024, 768);
 		
-		
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(560, 240, 1024, 768);
 		
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
-		setJMenuBar(menuBar);
-		
+				
 		JMenu mnFile = new JMenu("File ");
 		mnFile.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
 		menuBar.add(mnFile);		
@@ -108,30 +178,37 @@ public class MainFrame extends JFrame {
 		mnUser.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
 		menuBar.add(mnUser);		
 		JMenuItem mntmLogin = new JMenuItem("Login");
+		mntmLogin.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				login();
+			}
+		});
+		mntmLogin.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				login();
+			}
+		});
 		mnUser.add(mntmLogin);		
 		JMenuItem mntmLogout = new JMenuItem("Logout");
+		mntmLogout.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				logout();
+			}
+		});
 		mnUser.add(mntmLogout);		
 		JMenuItem mntmMycode = new JMenuItem("My code");
 		mnUser.add(mntmMycode);
 		
-		
-		
-		
-		JMenu mnAbout = new JMenu("About");
-		mnAbout.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
-		mnAbout.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				
-			}
-		});
+		frame.setJMenuBar(menuBar);
 		
 		
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
-		contentPane.setBorder(new EmptyBorder(5, 5, (int)(zoomRatio*5), (int)(zoomRatio*5)));
-		setContentPane(contentPane);
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(null);
+		
+		
 		
 		JLabel lblCodeEditor = new JLabel("Code editor");
 		lblCodeEditor.setBounds(5, 5, 143, 29);
@@ -144,9 +221,33 @@ public class MainFrame extends JFrame {
 		contentPane.add(lblMemoryForm);
 		
 		txtpnEditor = new JTextPane();		
+		txtpnEditor.addInputMethodListener(new InputMethodListener() {
+			public void caretPositionChanged(InputMethodEvent arg0) {
+			}
+			public void inputMethodTextChanged(InputMethodEvent arg0) {
+				codeChange();
+			}
+		});
+		txtpnEditor.getDocument().addDocumentListener(new DocumentListener() {
+	        @Override
+	        public void removeUpdate(DocumentEvent e) {
+	        	codeChange();
+	        }
+
+	        @Override
+	        public void insertUpdate(DocumentEvent e) {
+	        	codeChange();
+	        }
+
+	        @Override
+	        public void changedUpdate(DocumentEvent arg0) {
+	        	
+	        }
+	    });
+		
 		txtpnEditor.setBounds(5, 39, 661, 339);
 		
-		txtpnEditor.setFont(new Font("宋体", Font.PLAIN, 20));
+		txtpnEditor.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		txtpnEditor.setText("Put your code here.\r\n: )");
 		contentPane.add(txtpnEditor);
 		
@@ -175,23 +276,17 @@ public class MainFrame extends JFrame {
 		//JTextPane txtpnConsole = new JTextPane();
 		txtpnInput = new JTextPane();
 		txtpnInput.setBounds(5, 457, 521, 59);
-		txtpnInput.setFont(new Font("宋体", Font.PLAIN, 20));
+		txtpnInput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		txtpnInput.setText("program input");
 		contentPane.add(txtpnInput);
 		
 		JButton btnRun = new JButton("RUN");
-		btnRun.setFont(new Font("宋体", Font.PLAIN, 20));
-		btnRun.setBounds(589, 457, 77, 59);
+		btnRun.setFont(new Font("微软雅黑", Font.BOLD, 20));
+		btnRun.setBounds(573, 457, 93, 59);
 //		btnRun.setIcon(new ImageIcon(getIconPath("play")));
 		btnRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pressRun();
-			}
-		});
-		btnRun.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				//lblNewLabel.setText("Hello world!");
 			}
 		});
 		contentPane.add(btnRun);
@@ -201,9 +296,9 @@ public class MainFrame extends JFrame {
 		lblOutput.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblOutput);
 		
-		JTextPane textPnOutput = new JTextPane();
+		textPnOutput = new JTextPane();
 		textPnOutput.setBounds(5, 557, 661, 66);
-		textPnOutput.setFont(new Font("宋体", Font.PLAIN, 20));
+		textPnOutput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		textPnOutput.setEditable(false);
 		textPnOutput.setText("program output");
 		contentPane.add(textPnOutput);
@@ -213,10 +308,36 @@ public class MainFrame extends JFrame {
 		lblYouAreNow.setBounds(5, 636, 309, 31);
 		contentPane.add(lblYouAreNow);
 		
-		JLabel labelUserName = new JLabel("Guest");
+		labelUserName = new JLabel("Guest");
 		labelUserName.setFont(new Font("宋体", Font.BOLD, 24));
 		labelUserName.setBounds(269, 636, 397, 31);
 		contentPane.add(labelUserName);
+		
+		frame.setContentPane(contentPane);
+		
+		JButton btnUndo = new JButton("UNDO");
+		btnUndo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				undo();
+			}
+		});
+		btnUndo.setFont(new Font("微软雅黑", Font.BOLD, 20));
+		btnUndo.setBounds(233, 391, 111, 59);
+		contentPane.add(btnUndo);
+		
+		JButton btnRedo = new JButton("REDO");
+		btnRedo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				redo();
+			}
+		});
+		
+		btnRedo.setFont(new Font("微软雅黑", Font.BOLD, 20));
+		btnRedo.setBounds(376, 391, 111, 59);
+		contentPane.add(btnRedo);
+		
+		initCodeHistory();
+		
 	}	
 	
 	private void linkToServer() {
@@ -231,5 +352,44 @@ public class MainFrame extends JFrame {
 		} catch (NotBoundException e) {
 			e.printStackTrace();
 		}
+	}
+}
+
+
+class codeVersion{
+	private String code;
+	private int version;
+	private int preVersion;
+	private int nextVersion=-1;
+	
+	codeVersion(String code,int version,int preVersion){
+		this.code=code;
+		this.version=version;
+		this.preVersion=preVersion;		
+	}
+	
+	codeVersion(String code,int version,int preVersion,int nextVersion){
+		this(code,version,preVersion);
+		this.nextVersion=nextVersion;
+	}
+	
+	public String getCode(){
+		return code;
+	}
+	
+	public int getVersion(){
+		return version;
+	}
+	
+	public int getPreVersion(){
+		return preVersion;
+	}
+	
+	public int getNextVersion(){
+		return nextVersion;
+	}
+	
+	public void setNextVersion(int nextVersion){
+		this.nextVersion=nextVersion;
 	}
 }
