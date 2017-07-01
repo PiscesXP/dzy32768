@@ -30,7 +30,7 @@ public class BFInterpreter {
 	
 	
 	/**
-	 * @param sourceCode : The origin code, may include invalid commands.
+	 * @param sourceCode : 
 	 * @param inputToProgram : Input stream.
 	 * 
 	 * */

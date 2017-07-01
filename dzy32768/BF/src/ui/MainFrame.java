@@ -55,6 +55,27 @@ public class MainFrame extends JFrame {
 	private boolean isReady=false;
 	private boolean isUserChange=true;
 	
+	
+	
+// --------------------------------------------------------------------------		
+		
+		private void linkToServer() {
+			try {
+				remoteHelper = RemoteHelper.getInstance();
+				remoteHelper.setRemote(Naming.lookup("rmi://127.0.0.1:8887/DataRemoteObject"));	
+				
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				JOptionPane.showMessageDialog(null, "Link establish failed.\r\nPlease try again.", "Link failed.", JOptionPane.WARNING_MESSAGE);
+				System.exit(ERROR);
+				e.printStackTrace();
+			} catch (NotBoundException e) {
+				e.printStackTrace();
+			}
+		}
+// --------------------------------------------------------------------------
+		
 	// execute
 	private void pressRun(){
 		try {
@@ -133,14 +154,21 @@ public class MainFrame extends JFrame {
 	
 // ---------------------------- code IO --------------------------------------
 	
-	private void checkAllCode(){
+	// check all code of user
+	// select a code file to open
+	private void checkAllCode(){		
+		if(!isLogin){
+			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
 		try {
 			String[] files = remoteHelper.getIOService().readFileList(account).split(",");
 			StringBuffer sb = new StringBuffer();
 			sb.append("Select a file: \r\n");
 			for(int i=0;i<files.length;++i){
 				sb.append(i);
-				sb.append(":");
+				sb.append(":  ");
 				sb.append(files[i]);
 				sb.append("\r\n");
 			}
@@ -157,6 +185,7 @@ public class MainFrame extends JFrame {
 		}
 	}
 
+	
 	private void saveCode(){
 		if(!isLogin){
 			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
@@ -180,13 +209,20 @@ public class MainFrame extends JFrame {
 	private void updateTable(){
 		
 		try {
+			// fetch from remote server
 			byte[] memBytes = remoteHelper.getExecuteService().getMemBytes();
 			String[][] list = new String[memBytes.length][3];
 			for(int i=0;i<list.length;++i){
 				list[i][0]=String.valueOf(i);
 				list[i][1]=String.valueOf(memBytes[i]);
-				list[i][2]=String.valueOf(byte2char(memBytes[i]));
-			}			
+				
+				// convert to ASCII char
+				char c = (char) memBytes[i];
+				if((c>='0' && c<='9') || (c>='a' && c<='z') || (c>='A' && c<='Z'))
+					list[i][2]=String.valueOf(c);
+			}
+			
+			// set memory table
 			memoryTable.setModel(new DefaultTableModel(
 					list,
 					new String[] {
@@ -200,17 +236,7 @@ public class MainFrame extends JFrame {
 		}
 	}
 	
-	private char byte2char(byte b){
-		if(b>='0' && b<='9')
-			return (char) b;
-		if(b>='a' && b<='z')
-			return (char) b;
-		if(b>='A' && b<='Z')
-			return (char) b;
-		return ' ';
-	}
-	
-// -----------------------------------------------------------------------------
+// ---------------------------- Set & Get ---------------------------------------
 
 	
 	public void setEditorCode(String code){
@@ -235,7 +261,7 @@ public class MainFrame extends JFrame {
 
 	public MainFrame() {
 		
-		// 
+		// establish link
 		linkToServer();
 		
 		JFrame frame = new JFrame("BF Client");
@@ -295,16 +321,12 @@ public class MainFrame extends JFrame {
 			}
 		});
 		mnUser.add(mntmMycode);
-		
 		frame.setJMenuBar(menuBar);
-		
 		
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(null);
-		
-		
 		
 		JLabel lblCodeEditor = new JLabel("Code editor");
 		lblCodeEditor.setBounds(15, 5, 143, 29);
@@ -432,26 +454,12 @@ public class MainFrame extends JFrame {
 		scrollPane.setColumnHeaderView(null);
 		contentPane.add(scrollPane);
 		
+		
+		// init code history
 		initCodeHistory();
 		
 	}	
-	
-// --------------------------------------------------------------------------
-	
-	
-	private void linkToServer() {
-		try {
-			remoteHelper = RemoteHelper.getInstance();
-			remoteHelper.setRemote(Naming.lookup("rmi://127.0.0.1:8887/DataRemoteObject"));			
-			System.out.println("linked");
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
-		} catch (RemoteException e) {
-			e.printStackTrace();
-		} catch (NotBoundException e) {
-			e.printStackTrace();
-		}
-	}
+
 }
 
 

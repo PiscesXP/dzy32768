@@ -1,5 +1,7 @@
 package ui;
-
+/**
+ * 
+ * */
 public class CodeVersion{
 	private String code;
 	private int version;
