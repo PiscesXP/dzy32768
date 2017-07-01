@@ -19,7 +19,6 @@ public class BFExecute {
 	
 	public String execute(String code, String param) throws RemoteException {
 		bfi = new BFInterpreter(code,param);
-		
 		bfi.execute();
 		return bfi.getOutput();
 	}

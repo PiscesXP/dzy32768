@@ -27,8 +27,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+
+import javafx.scene.layout.Border;
+
 import java.awt.event.InputMethodListener;
 import java.awt.event.InputMethodEvent;
+import javax.swing.JScrollBar;
 
 public class MainFrame extends JFrame {
 
@@ -189,19 +193,16 @@ public class MainFrame extends JFrame {
 		
 		try {
 			byte[] memBytes = remoteHelper.getExecuteService().getMemBytes();
-			String[][] list = new String[memBytes.length+1][3];
-			list[0][0]="Byte #";
-			list[0][1]="Value";
-			list[0][2]="ASCII";
-			for(int i=1;i<list.length;++i){
-				list[0][0]=String.valueOf(i-1);
-				list[0][1]=String.valueOf(memBytes[i-1]);
-				list[0][2]=String.valueOf(byte2char(memBytes[i-1]));
+			String[][] list = new String[memBytes.length][3];
+			for(int i=0;i<list.length;++i){
+				list[i][0]=String.valueOf(i);
+				list[i][1]=String.valueOf(memBytes[i]);
+				list[i][2]=String.valueOf(byte2char(memBytes[i]));
 			}			
 			memoryTable.setModel(new DefaultTableModel(
 					list,
-					new Object[] {
-							null, null, null
+					new String[] {
+							"Byte #", "Value", "ASCII"
 					}
 				));
 			
@@ -276,7 +277,7 @@ public class MainFrame extends JFrame {
 		});
 		mnFile.add(mntmSave);
 		
-		JMenu mnUser = new JMenu("User ");
+		JMenu mnUser = new JMenu("User");
 		mnUser.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
 		menuBar.add(mnUser);		
 		JMenuItem mntmLogin = new JMenuItem("Login");
@@ -359,22 +360,19 @@ public class MainFrame extends JFrame {
 		contentPane.add(txtpnEditor);
 		
 		memoryTable = new JTable();
-		memoryTable.setBounds(717, 39, 266, 584);
-		memoryTable.setEnabled(false);
+		memoryTable.setBounds(720, 50, 256, 576);
 		memoryTable.setFont(new Font("宋体", Font.PLAIN, 20));
 		memoryTable.setRowHeight(24);
 		memoryTable.setCellSelectionEnabled(true);
 		memoryTable.setModel(new DefaultTableModel(
 			new Object[][] {
-				{"Byte #", "Value", "ASCII"},
 				{"0", "0", "\\0"},
 			},
-			new Object[] {
-					null, null, null
+			new String[] {
+				"Byte #", "Value", "ASCII"
 			}
 		));
 		contentPane.add(memoryTable);
-		
 		
 		JLabel lblNewLabel = new JLabel("Input");
 		lblNewLabel.setBounds(5, 421, 65, 31);
@@ -441,6 +439,12 @@ public class MainFrame extends JFrame {
 		btnRedo.setFont(new Font("微软雅黑", Font.BOLD, 20));
 		btnRedo.setBounds(376, 391, 111, 59);
 		contentPane.add(btnRedo);
+		
+		//memoryTable
+		JScrollPane scrollPane = new JScrollPane(memoryTable);
+		scrollPane.setBounds(720, 50, 256, 576);
+		scrollPane.setColumnHeaderView(null);
+		contentPane.add(scrollPane);
 		
 		initCodeHistory();
 		
