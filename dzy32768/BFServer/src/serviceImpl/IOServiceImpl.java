@@ -16,15 +16,15 @@ public class IOServiceImpl implements IOService{
 	
 	// test 
 	// past
-	/*
+	
 	public static void main(String[] args) {
 		IOServiceImpl i = new IOServiceImpl();
 		i.writeFile("test write\r\n15165516","147258369","Hello");
 		i.writeFile("test write 2","147258369","abcd");
-		System.out.println(i.readFile("147258369", "147258369_Hello"));
+		System.out.println(i.readFile("147258369", "Hello"));
 		System.out.println(i.readFileList("147258369"));
 	}
-*/	
+
 	public static final String PATH = "D:/BF/";
 	
 	@Override
@@ -45,7 +45,7 @@ public class IOServiceImpl implements IOService{
 	@Override
 	public String readFile(String userId, String fileName) {
 		// TODO Auto-generated method stub
-		fileName = PATH + fileName + ".txt";
+		fileName = PATH + userId + "_" + fileName + ".txt";
 		String line,text="";
 		try {
 			File file = new File(fileName);
@@ -70,15 +70,19 @@ public class IOServiceImpl implements IOService{
 	public String readFileList(String userId) {
 		// TODO Auto-generated method stub
 		String list="";
+		String fileName;
 		File dir = new File(PATH);
 		File[] files = dir.listFiles();
 		for(File f : files){
-			if(list.equals(""))
-				list=list + f.getName();
-			else
-				list=list + "," + f.getName();
+			fileName=f.getName();
+			if(fileName.contains(userId + "_")){
+				if(!list.equals(""))
+					list=list + ",";
+				list = list + fileName.substring(fileName.indexOf("_")+1);
+			}
+			
 		}
-		return list;
+		return list.replace(".txt", "");
 	}
 	
 }

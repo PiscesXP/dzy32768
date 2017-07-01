@@ -14,5 +14,5 @@ public interface ExecuteService extends Remote {
 	 */
 	public String execute(String code, String param) throws RemoteException;
 	
-	//public byte[] getMemBytes() throws RemoteException;
+	public byte[] getMemBytes() throws RemoteException;
 }

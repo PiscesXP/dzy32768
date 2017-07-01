@@ -14,10 +14,17 @@ import java.rmi.RemoteException;
  * ע�⣬����Ҫ�޸ı���������Ͱ�������ᵼ�²��Գ����޷��ҵ��������в��ԡ�
  */
 public class BFExecute {
+	
+	private BFInterpreter bfi;
+	
 	public String execute(String code, String param) throws RemoteException {
-		BFInterpreter bfi = new BFInterpreter(code,param);
+		bfi = new BFInterpreter(code,param);
 		
 		bfi.execute();
 		return bfi.getOutput();
+	}
+	
+	public byte[] getMemBytes(){
+		return bfi.getMemBytes();
 	}
 }

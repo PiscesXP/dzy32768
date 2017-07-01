@@ -9,7 +9,10 @@ import service.UserService;
 import executeImpl.*;
 
 public class ExecuteServiceImpl implements ExecuteService {
-
+	
+	private OOKExecute ooke;
+	private BFExecute bfe;
+	private byte[] memBytes;
 	/**
 	 * 请实现该方法
 	 */
@@ -17,19 +20,20 @@ public class ExecuteServiceImpl implements ExecuteService {
 	public String execute(String code, String param) throws RemoteException {
 		// TODO Auto-generated method stub
 		if(code.contains("Ook")){
-			OOKExecute ooke = new OOKExecute();
+			ooke = new OOKExecute();
+			memBytes=ooke.getMemBytes();
 			return ooke.execute(code, param);
 		}
 		else{
-			BFExecute bfe = new BFExecute();
+			bfe = new BFExecute();
+			memBytes=bfe.getMemBytes();
 			return bfe.execute(code, param);
 		}
 	}
-	/*
+	
 	@Override
 	public byte[] getMemBytes() throws RemoteException{
-		return null;
-		
+		return memBytes;		
 	}
-*/
+
 }

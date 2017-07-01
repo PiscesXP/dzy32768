@@ -13,9 +13,16 @@ import java.rmi.RemoteException;
  * ע�⣬����Ҫ�޸ı���������Ͱ�������ᵼ�²��Գ����޷��ҵ��������в��ԡ�
  */
 public class OOKExecute {
+	
+	private BFExecute bfe;
+	
 	public String execute(String code, String param) throws RemoteException {
-		BFExecute bfe = new BFExecute();
+		bfe = new BFExecute();
 		Ook2BF o2b = new Ook2BF();
 		return bfe.execute(o2b.CodeInBF(code), param);
+	}
+	
+	public byte[] getMemBytes(){
+		return bfe.getMemBytes();
 	}
 }

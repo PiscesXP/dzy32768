@@ -59,5 +59,10 @@ public class DataRemoteObject extends UnicastRemoteObject implements IOService, 
 		return executeService.execute(code, param);
 	}
 	
+	@Override
+	public byte[] getMemBytes() throws RemoteException{
+		return executeService.getMemBytes();		
+	}
+	
 	
 }

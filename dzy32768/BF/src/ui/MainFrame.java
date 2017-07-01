@@ -2,6 +2,7 @@ package ui;
 import java.awt.Color;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -46,7 +47,7 @@ public class MainFrame extends JFrame {
 	
 	private static RemoteHelper remoteHelper;
 	
-	ArrayList<codeVersion> historyCode = new ArrayList<codeVersion>();
+	ArrayList<CodeVersion> historyCode = new ArrayList<CodeVersion>();
 	private int currentVersion=0;
 	private int topVersion=0;
 	private boolean isReady=false;
@@ -56,11 +57,15 @@ public class MainFrame extends JFrame {
 	private void pressRun(){
 		try {
 			setOutputText(remoteHelper.getExecuteService().execute(getEditorCode(), getInputText()));
+			updateTable();
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+
+	
+// --------------------------  login logout ----------------------------------------
 	
 	private void login(){		
 		if(isLogin){
@@ -93,9 +98,14 @@ public class MainFrame extends JFrame {
 		labelUserName.setText("Guest");
 		JOptionPane.showMessageDialog(null, "Logout successful.", "Logout", JOptionPane.WARNING_MESSAGE);
 	}
+
+// --------------------------------------------------------------------
 	
+
+// ---------------------------- code history ----------------------------------
+
 	private void initCodeHistory(){
-		codeVersion cv = new codeVersion(txtpnEditor.getText(),0,0);
+		CodeVersion cv = new CodeVersion(txtpnEditor.getText(),0,0);
 		historyCode.add(0,cv);	
 		isReady=true;
 	}
@@ -104,7 +114,7 @@ public class MainFrame extends JFrame {
 		if(!isReady || !isUserChange)
 			return;
 		++topVersion;
-		codeVersion cv = new codeVersion(txtpnEditor.getText(),topVersion,currentVersion);
+		CodeVersion cv = new CodeVersion(txtpnEditor.getText(),topVersion,currentVersion);
 		historyCode.get(currentVersion).setNextVersion(topVersion);
 		historyCode.add(topVersion,cv);	
 		currentVersion=cv.getVersion();
@@ -112,8 +122,8 @@ public class MainFrame extends JFrame {
 	
 	private void undo(){
 		isUserChange=false;
-		codeVersion currentCodeVersion = historyCode.get(currentVersion);
-		codeVersion preCodeVersion = historyCode.get(currentCodeVersion.getPreVersion());
+		CodeVersion currentCodeVersion = historyCode.get(currentVersion);
+		CodeVersion preCodeVersion = historyCode.get(currentCodeVersion.getPreVersion());
 		txtpnEditor.setText(preCodeVersion.getCode());
 		currentVersion=preCodeVersion.getVersion();	
 		isUserChange=true;
@@ -121,16 +131,99 @@ public class MainFrame extends JFrame {
 	
 	private void redo(){
 		isUserChange=false;
-		codeVersion currentCodeVersion = historyCode.get(currentVersion);
-		if(currentCodeVersion.getNextVersion()==-1){
-			return;
-		}
-		codeVersion nextCodeVersion = historyCode.get(currentCodeVersion.getNextVersion());
+		CodeVersion currentCodeVersion = historyCode.get(currentVersion);
+		if(currentCodeVersion.getNextVersion()==-1)
+			return;		
+		CodeVersion nextCodeVersion = historyCode.get(currentCodeVersion.getNextVersion());
 		txtpnEditor.setText(nextCodeVersion.getCode());
 		currentVersion=nextCodeVersion.getVersion();
 		isUserChange=true;
 	}
 
+// ---------------------------------------------------------------------
+	
+// ---------------------------- code IO --------------------------------------
+	
+	private void checkAllCode(){
+		try {
+			String[] files = remoteHelper.getIOService().readFileList(account).split(",");
+			StringBuffer sb = new StringBuffer();
+			sb.append("Select a file: \r\n");
+			for(int i=0;i<files.length;++i){
+				sb.append(i);
+				sb.append(":");
+				sb.append(files[i]);
+				sb.append("\r\n");
+			}
+			int selectFile;
+			do{
+				selectFile = Integer.parseInt(JOptionPane.showInputDialog(null,sb.toString()));
+			}while(selectFile<0 || selectFile>files.length);
+			
+			txtpnEditor.setText(remoteHelper.getIOService().readFile(account, files[selectFile]));
+			
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void saveCode(){
+		if(!isLogin)
+			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
+		String fileName=JOptionPane.showInputDialog(null,"Input a file name: ");
+		try {
+			remoteHelper.getIOService().writeFile(getEditorCode(), account, fileName);
+			JOptionPane.showMessageDialog(null, "File saved!", "Success", JOptionPane.WARNING_MESSAGE);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+// -----------------------------------------------------------------------------
+	
+// ------------------------ Memory Table ---------------------------------------
+	
+	private void updateTable(){
+		
+		try {
+			byte[] memBytes = remoteHelper.getExecuteService().getMemBytes();
+			String[][] list = new String[memBytes.length+1][3];
+			list[0][0]="Byte #";
+			list[0][1]="Value";
+			list[0][2]="ASCII";
+			for(int i=1;i<list.length;++i){
+				list[0][0]=String.valueOf(i-1);
+				list[0][1]=String.valueOf(memBytes[i-1]);
+				list[0][2]=String.valueOf(byte2char(memBytes[i-1]));
+			}			
+			memoryTable.setModel(new DefaultTableModel(
+					list,
+					new Object[] {
+							null, null, null
+					}
+				));
+			
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private char byte2char(byte b){
+		if(b>='0' && b<='9')
+			return (char) b;
+		if(b>='a' && b<='z')
+			return (char) b;
+		if(b>='A' && b<='Z')
+			return (char) b;
+		return ' ';
+	}
+	
+// -----------------------------------------------------------------------------
+
+	
 	public void setEditorCode(String code){
 		txtpnEditor.setText(code);
 	}	
@@ -149,9 +242,8 @@ public class MainFrame extends JFrame {
 		textPnOutput.setText(text);
 	}	
 	
-	/**
-	 * Create the frame.
-	 */
+// --------------------- constructor of frame ------------------------------
+
 	public MainFrame() {
 		
 		// 
@@ -170,8 +262,18 @@ public class MainFrame extends JFrame {
 		mnFile.setFont(new Font("Microsoft YaHei UI", Font.PLAIN, 24));
 		menuBar.add(mnFile);		
 		JMenuItem mntmNew = new JMenuItem("New");
+		mntmNew.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				txtpnEditor.setText(null);
+			}
+		});
 		mnFile.add(mntmNew);		
 		JMenuItem mntmSave = new JMenuItem("Save");
+		mntmSave.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				saveCode();
+			}
+		});
 		mnFile.add(mntmSave);
 		
 		JMenu mnUser = new JMenu("User ");
@@ -198,6 +300,11 @@ public class MainFrame extends JFrame {
 		});
 		mnUser.add(mntmLogout);		
 		JMenuItem mntmMycode = new JMenuItem("My code");
+		mntmMycode.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				checkAllCode();
+			}
+		});
 		mnUser.add(mntmMycode);
 		
 		frame.setJMenuBar(menuBar);
@@ -220,7 +327,7 @@ public class MainFrame extends JFrame {
 		lblMemoryForm.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblMemoryForm);
 		
-		txtpnEditor = new JTextPane();		
+		txtpnEditor = new JTextPane();
 		txtpnEditor.addInputMethodListener(new InputMethodListener() {
 			public void caretPositionChanged(InputMethodEvent arg0) {
 			}
@@ -245,7 +352,7 @@ public class MainFrame extends JFrame {
 	        }
 	    });
 		
-		txtpnEditor.setBounds(5, 39, 661, 339);
+		txtpnEditor.setBounds(15, 51, 661, 339);
 		
 		txtpnEditor.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		txtpnEditor.setText("Put your code here.\r\n: )");
@@ -262,18 +369,18 @@ public class MainFrame extends JFrame {
 				{"Byte #", "Value", "ASCII"},
 				{"0", "0", "\\0"},
 			},
-			new String[] {
-				"Byte #", "Value", "ASCII"
+			new Object[] {
+					null, null, null
 			}
 		));
 		contentPane.add(memoryTable);
+		
 		
 		JLabel lblNewLabel = new JLabel("Input");
 		lblNewLabel.setBounds(5, 421, 65, 31);
 		lblNewLabel.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblNewLabel);
 		
-		//JTextPane txtpnConsole = new JTextPane();
 		txtpnInput = new JTextPane();
 		txtpnInput.setBounds(5, 457, 521, 59);
 		txtpnInput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
@@ -283,7 +390,6 @@ public class MainFrame extends JFrame {
 		JButton btnRun = new JButton("RUN");
 		btnRun.setFont(new Font("微软雅黑", Font.BOLD, 20));
 		btnRun.setBounds(573, 457, 93, 59);
-//		btnRun.setIcon(new ImageIcon(getIconPath("play")));
 		btnRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pressRun();
@@ -340,6 +446,9 @@ public class MainFrame extends JFrame {
 		
 	}	
 	
+// --------------------------------------------------------------------------
+	
+	
 	private void linkToServer() {
 		try {
 			remoteHelper = RemoteHelper.getInstance();
@@ -356,40 +465,3 @@ public class MainFrame extends JFrame {
 }
 
 
-class codeVersion{
-	private String code;
-	private int version;
-	private int preVersion;
-	private int nextVersion=-1;
-	
-	codeVersion(String code,int version,int preVersion){
-		this.code=code;
-		this.version=version;
-		this.preVersion=preVersion;		
-	}
-	
-	codeVersion(String code,int version,int preVersion,int nextVersion){
-		this(code,version,preVersion);
-		this.nextVersion=nextVersion;
-	}
-	
-	public String getCode(){
-		return code;
-	}
-	
-	public int getVersion(){
-		return version;
-	}
-	
-	public int getPreVersion(){
-		return preVersion;
-	}
-	
-	public int getNextVersion(){
-		return nextVersion;
-	}
-	
-	public void setNextVersion(int nextVersion){
-		this.nextVersion=nextVersion;
-	}
-}
