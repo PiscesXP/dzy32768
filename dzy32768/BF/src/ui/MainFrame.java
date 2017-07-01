@@ -42,18 +42,16 @@ public class MainFrame extends JFrame {
 	private JTextPane textPnOutput;
 	
 	private JTable memoryTable;
-	private String memList[][];
 	
 	private JLabel labelUserName;
-		
+	
+	private String account;
 	private boolean isLogin=false;
-	private String account,password;
 	
-	private static RemoteHelper remoteHelper;
+	private RemoteHelper remoteHelper;
 	
-	ArrayList<CodeVersion> historyCode = new ArrayList<CodeVersion>();
-	private int currentVersion=0;
-	private int topVersion=0;
+	// history version
+	private CodeVersionHistory cvh;
 	private boolean isReady=false;
 	private boolean isUserChange=true;
 	
@@ -75,6 +73,7 @@ public class MainFrame extends JFrame {
 		if(isLogin){
 			JOptionPane.showMessageDialog(null, "You are now login as " + account + ".", "Already login", JOptionPane.WARNING_MESSAGE);
 		}
+		String password;
 		while(!isLogin){
 			account=JOptionPane.showInputDialog(null,"Input your account:");
 			password=JOptionPane.showInputDialog(null,"Input your password:");
@@ -97,8 +96,6 @@ public class MainFrame extends JFrame {
 	
 	private void logout(){
 		isLogin=false;
-		account=null;
-		password=null;
 		labelUserName.setText("Guest");
 		JOptionPane.showMessageDialog(null, "Logout successful.", "Logout", JOptionPane.WARNING_MESSAGE);
 	}
@@ -108,40 +105,28 @@ public class MainFrame extends JFrame {
 
 // ---------------------------- code history ----------------------------------
 
-	private void initCodeHistory(){
-		CodeVersion cv = new CodeVersion(txtpnEditor.getText(),0,0);
-		historyCode.add(0,cv);	
+	private void initCodeHistory(){		
+		cvh = new CodeVersionHistory(getEditorCode());
 		isReady=true;
 	}
 	
 	private void codeChange(){
-		if(!isReady || !isUserChange)
-			return;
-		++topVersion;
-		CodeVersion cv = new CodeVersion(txtpnEditor.getText(),topVersion,currentVersion);
-		historyCode.get(currentVersion).setNextVersion(topVersion);
-		historyCode.add(topVersion,cv);	
-		currentVersion=cv.getVersion();
+		if(isReady && isUserChange)
+			cvh.addNewVersion(getEditorCode());
 	}
 	
 	private void undo(){
 		isUserChange=false;
-		CodeVersion currentCodeVersion = historyCode.get(currentVersion);
-		CodeVersion preCodeVersion = historyCode.get(currentCodeVersion.getPreVersion());
-		txtpnEditor.setText(preCodeVersion.getCode());
-		currentVersion=preCodeVersion.getVersion();	
+		setEditorCode(cvh.undo());
 		isUserChange=true;
 	}
 	
 	private void redo(){
-		isUserChange=false;
-		CodeVersion currentCodeVersion = historyCode.get(currentVersion);
-		if(currentCodeVersion.getNextVersion()==-1)
-			return;		
-		CodeVersion nextCodeVersion = historyCode.get(currentCodeVersion.getNextVersion());
-		txtpnEditor.setText(nextCodeVersion.getCode());
-		currentVersion=nextCodeVersion.getVersion();
-		isUserChange=true;
+		if(cvh.isRedoable()){
+			isUserChange=false;
+			setEditorCode(cvh.redo());
+			isUserChange=true;
+		}
 	}
 
 // ---------------------------------------------------------------------
@@ -173,8 +158,11 @@ public class MainFrame extends JFrame {
 	}
 
 	private void saveCode(){
-		if(!isLogin)
+		if(!isLogin){
 			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
+			return;
+		}
+		
 		String fileName=JOptionPane.showInputDialog(null,"Input a file name: ");
 		try {
 			remoteHelper.getIOService().writeFile(getEditorCode(), account, fileName);
@@ -319,7 +307,7 @@ public class MainFrame extends JFrame {
 		
 		
 		JLabel lblCodeEditor = new JLabel("Code editor");
-		lblCodeEditor.setBounds(5, 5, 143, 29);
+		lblCodeEditor.setBounds(15, 5, 143, 29);
 		lblCodeEditor.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblCodeEditor);
 		
@@ -366,7 +354,7 @@ public class MainFrame extends JFrame {
 		memoryTable.setCellSelectionEnabled(true);
 		memoryTable.setModel(new DefaultTableModel(
 			new Object[][] {
-				{"0", "0", "\\0"},
+				{"0", "0", ""},
 			},
 			new String[] {
 				"Byte #", "Value", "ASCII"
@@ -382,7 +370,6 @@ public class MainFrame extends JFrame {
 		txtpnInput = new JTextPane();
 		txtpnInput.setBounds(5, 457, 521, 59);
 		txtpnInput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
-		txtpnInput.setText("program input");
 		contentPane.add(txtpnInput);
 		
 		JButton btnRun = new JButton("RUN");
@@ -404,7 +391,7 @@ public class MainFrame extends JFrame {
 		textPnOutput.setBounds(5, 557, 661, 66);
 		textPnOutput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		textPnOutput.setEditable(false);
-		textPnOutput.setText("program output");
+		textPnOutput.setText("//program output");
 		contentPane.add(textPnOutput);
 		
 		JLabel lblYouAreNow = new JLabel("You are now login as: ");
@@ -440,7 +427,6 @@ public class MainFrame extends JFrame {
 		btnRedo.setBounds(376, 391, 111, 59);
 		contentPane.add(btnRedo);
 		
-		//memoryTable
 		JScrollPane scrollPane = new JScrollPane(memoryTable);
 		scrollPane.setBounds(720, 50, 256, 576);
 		scrollPane.setColumnHeaderView(null);

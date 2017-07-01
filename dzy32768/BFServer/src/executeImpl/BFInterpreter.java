@@ -180,10 +180,6 @@ searchBack:		while(j>=0){
 	 * */
 	public void execute(){
 		while(nextIns());
-		/*
-		while(codePointer<codeLength){
-			nextIns();
-		}*/
 	}
 	
 	public String getOutput(){

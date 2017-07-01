@@ -26,13 +26,15 @@ public class ExecuteServiceImpl implements ExecuteService {
 		if(code.contains("Ook")){
 			ooke = new OOKExecute();
 			exeResult=ooke.execute(code, param);
-			memBytes=ooke.getMemBytes();			
+			memBytes=ooke.getMemBytes();
+			ooke=null;
 			return exeResult;
 		}
 		else{
 			bfe = new BFExecute();
 			exeResult=bfe.execute(code, param);
 			memBytes=bfe.getMemBytes();
+			bfe=null;
 			return exeResult;
 		}
 	}
