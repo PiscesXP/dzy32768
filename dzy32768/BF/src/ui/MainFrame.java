@@ -363,14 +363,19 @@ public class MainFrame extends JFrame {
 	        }
 	    });
 		
-		txtpnEditor.setBounds(15, 51, 661, 339);
+		txtpnEditor.setBounds(15, 37, 661, 339);
 		
 		txtpnEditor.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		txtpnEditor.setText("Put your code here.\r\n: )");
 		contentPane.add(txtpnEditor);
 		
+		
+		
+		
+		
+		
 		memoryTable = new JTable();
-		memoryTable.setBounds(720, 50, 256, 576);
+		memoryTable.setBounds(720, 37, 256, 600);
 		memoryTable.setFont(new Font("宋体", Font.PLAIN, 20));
 		memoryTable.setRowHeight(24);
 		memoryTable.setCellSelectionEnabled(true);
@@ -385,18 +390,18 @@ public class MainFrame extends JFrame {
 		contentPane.add(memoryTable);
 		
 		JLabel lblNewLabel = new JLabel("Input");
-		lblNewLabel.setBounds(5, 421, 65, 31);
+		lblNewLabel.setBounds(15, 455, 65, 31);
 		lblNewLabel.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblNewLabel);
 		
 		txtpnInput = new JTextPane();
-		txtpnInput.setBounds(5, 457, 521, 59);
+		txtpnInput.setBounds(14, 488, 662, 34);
 		txtpnInput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		contentPane.add(txtpnInput);
 		
 		JButton btnRun = new JButton("RUN");
 		btnRun.setFont(new Font("微软雅黑", Font.BOLD, 20));
-		btnRun.setBounds(573, 457, 93, 59);
+		btnRun.setBounds(470, 385, 111, 59);
 		btnRun.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pressRun();
@@ -405,12 +410,12 @@ public class MainFrame extends JFrame {
 		contentPane.add(btnRun);
 		
 		JLabel lblOutput = new JLabel("Output");
-		lblOutput.setBounds(5, 521, 78, 31);
+		lblOutput.setBounds(15, 535, 78, 31);
 		lblOutput.setFont(new Font("宋体", Font.BOLD, 24));
 		contentPane.add(lblOutput);
 		
 		textPnOutput = new JTextPane();
-		textPnOutput.setBounds(5, 557, 661, 66);
+		textPnOutput.setBounds(15, 566, 661, 66);
 		textPnOutput.setFont(new Font("微软雅黑", Font.PLAIN, 20));
 		textPnOutput.setEditable(false);
 		textPnOutput.setText("//program output");
@@ -418,12 +423,12 @@ public class MainFrame extends JFrame {
 		
 		JLabel lblYouAreNow = new JLabel("You are now login as: ");
 		lblYouAreNow.setFont(new Font("宋体", Font.BOLD, 22));
-		lblYouAreNow.setBounds(5, 636, 309, 31);
+		lblYouAreNow.setBounds(14, 656, 309, 31);
 		contentPane.add(lblYouAreNow);
 		
 		labelUserName = new JLabel("Guest");
 		labelUserName.setFont(new Font("宋体", Font.BOLD, 24));
-		labelUserName.setBounds(269, 636, 397, 31);
+		labelUserName.setBounds(279, 655, 397, 31);
 		contentPane.add(labelUserName);
 		
 		frame.setContentPane(contentPane);
@@ -435,7 +440,8 @@ public class MainFrame extends JFrame {
 			}
 		});
 		btnUndo.setFont(new Font("微软雅黑", Font.BOLD, 20));
-		btnUndo.setBounds(233, 391, 111, 59);
+		btnUndo.setBounds(72, 385, 111, 59);
+		btnUndo.setVisible(true);
 		contentPane.add(btnUndo);
 		
 		JButton btnRedo = new JButton("REDO");
@@ -446,20 +452,24 @@ public class MainFrame extends JFrame {
 		});
 		
 		btnRedo.setFont(new Font("微软雅黑", Font.BOLD, 20));
-		btnRedo.setBounds(376, 391, 111, 59);
+		btnRedo.setBounds(247, 385, 111, 59);
+		btnRedo.setVisible(true);
 		contentPane.add(btnRedo);
 		
 		JScrollPane scrollPane = new JScrollPane(memoryTable);
-		scrollPane.setBounds(720, 50, 256, 576);
+		scrollPane.setBounds(720, 37, 256, 600);
 		scrollPane.setColumnHeaderView(null);
 		contentPane.add(scrollPane);
-		
+
+
+		JScrollPane scrollPane_1 = new JScrollPane(txtpnEditor);
+		scrollPane_1.setBounds(15, 37, 661, 339);
+		contentPane.add(scrollPane_1);
 		
 		// init code history
 		initCodeHistory();
 		
 	}	
-
 }
 
 
