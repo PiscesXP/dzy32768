@@ -8,6 +8,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import rmi.RemoteHelper;
+import runner.ClientRunner;
+
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import java.awt.event.MouseAdapter;
@@ -43,81 +45,29 @@ public class MainFrame extends JFrame {
 	
 	private JLabel labelUserName;
 	
-	private String account;
-	private boolean isLogin=false;
+	private ClientRunner clientRunner;	
 	
-	private RemoteHelper remoteHelper;
-	
-	// history version
-	private CodeVersionHistory cvh;
 	private boolean isReady=false;
 	private boolean isUserChange=true;
 	
-	private FileVersionController fvc;
-	
-	
-// --------------------------------------------------------------------------		
-		
-		private void linkToServer() {
-			try {
-				remoteHelper = RemoteHelper.getInstance();
-				remoteHelper.setRemote(Naming.lookup("rmi://127.0.0.1:8887/DataRemoteObject"));	
-				
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			} catch (RemoteException e) {
-				JOptionPane.showMessageDialog(null, "Link establish failed.\r\nPlease try again.", "Link failed.", JOptionPane.WARNING_MESSAGE);
-				System.exit(ERROR);
-				e.printStackTrace();
-			} catch (NotBoundException e) {
-				e.printStackTrace();
-			}
-		}
+
 // --------------------------------------------------------------------------
 		
 	// execute
 	private void pressRun(){
-		try {
-			setOutputText(remoteHelper.getExecuteService().execute(getEditorCode(), getInputText()));
-			updateTable();
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		setOutputText(clientRunner.runProgram(getEditorCode(), getInputText()));
+		updateTable();
 	}
-
 	
 // --------------------------  login logout ----------------------------------------
 	
-	private void login(){		
-		if(isLogin){
-			JOptionPane.showMessageDialog(null, "You are now login as " + account + ".", "Already login", JOptionPane.WARNING_MESSAGE);
-		}
-		String password;
-		while(!isLogin){
-			account=JOptionPane.showInputDialog(null,"Input your account:");
-			password=JOptionPane.showInputDialog(null,"Input your password:");
-			try {
-				isLogin=remoteHelper.getUserService().login(account, password);
-				if(isLogin){
-					JOptionPane.showMessageDialog(null, "You are now login as " + account + ".", "Success", JOptionPane.WARNING_MESSAGE);
-				}
-				else{
-					JOptionPane.showMessageDialog(null, "The account or password is incorrect.\r\nPlease try again.", "Login fail", JOptionPane.WARNING_MESSAGE);
-				}
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			labelUserName.setText(account);
-		}		
-		
+	private void login(){
+		labelUserName.setText(clientRunner.login());
 	}
 	
 	private void logout(){
-		isLogin=false;
+		clientRunner.logout();
 		labelUserName.setText("Guest");
-		JOptionPane.showMessageDialog(null, "Logout successful.", "Logout", JOptionPane.WARNING_MESSAGE);
 	}
 
 // --------------------------------------------------------------------
@@ -125,91 +75,42 @@ public class MainFrame extends JFrame {
 
 // ---------------------------- code history ----------------------------------
 
-	private void initCodeHistory(){		
-		cvh = new CodeVersionHistory(getEditorCode());
-		isReady=true;
-	}
-	
 	private void codeChange(){
 		if(isReady && isUserChange)
-			cvh.addNewVersion(getEditorCode());
+			clientRunner.codeChange(getEditorCode());
 	}
 	
 	private void undo(){
 		isUserChange=false;
-		setEditorCode(cvh.undo());
+		setEditorCode(clientRunner.undo());
 		isUserChange=true;
 	}
 	
 	private void redo(){
-		if(cvh.isRedoable()){
-			isUserChange=false;
-			setEditorCode(cvh.redo());
-			isUserChange=true;
-		}
+		isUserChange=false;
+		String redoTxt=clientRunner.redo();
+		if(redoTxt!=null)
+			setEditorCode(redoTxt);
+		isUserChange=true;
+		
 	}
 
 // ---------------------------------------------------------------------
 	
 // ---------------------------- file version controller --------------------------------------
-	
-	// check all code of user
-	// select a code file to open
-	
-	private void initFileController(){
-		fvc = new FileVersionController(remoteHelper.getIOService());
-	}
+
 	
 	// check all code files
 	// select a file to open
 	private void checkAllCode(){
-		if(!isLogin){
-			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		
-		ArrayList<FileVersion> fv= fvc.getAllFileVersion(account);
-		
-		StringBuffer sb = new StringBuffer();
-		sb.append("Select a file: \r\n");
-		for(int i=0;i<fv.size();++i){
-			sb.append(i);
-			sb.append(":  ");
-			sb.append(fv.get(i).getName());
-			sb.append("   ");
-			sb.append(fv.get(i).getPostfix());
-			sb.append(" File   ");
-			sb.append(fv.get(i).getDate());
-			sb.append("\r\n");
-		}
-		
-		String input;
-		int selectFile = -1;
-		do{
-			input=JOptionPane.showInputDialog(null,sb.toString());
-			if(input.equals("") || input==null)
-				continue;
-			selectFile = Integer.parseInt(input);
-		}while(selectFile<0 || selectFile>fv.size());
-		
-		setEditorCode(fv.get(selectFile).getContent(remoteHelper.getIOService()));
+		String newCode=clientRunner.SelectCode();
+		if(newCode!=null)
+			setEditorCode(newCode);
 	}
 
 	
 	private void saveCode(){
-		if(!isLogin){
-			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		String fileName=JOptionPane.showInputDialog(null,"Input a file name: ");
-		String code = getEditorCode();
-		String postfix;
-		if(code.contains("Ook"))
-			postfix="OOK";
-		else
-			postfix="BF";
-		fvc.writeFile(account, fileName, code, postfix);
-		JOptionPane.showMessageDialog(null, "File save successful.", "File saved", JOptionPane.INFORMATION_MESSAGE);
+		clientRunner.saveCode(getEditorCode());
 	}
 	
 // -----------------------------------------------------------------------------
@@ -218,32 +119,25 @@ public class MainFrame extends JFrame {
 	
 	private void updateTable(){
 		
-		try {
-			// fetch from remote server
-			byte[] memBytes = remoteHelper.getExecuteService().getMemBytes();
-			String[][] list = new String[memBytes.length][3];
-			for(int i=0;i<list.length;++i){
-				list[i][0]=String.valueOf(i);
-				list[i][1]=String.valueOf(memBytes[i]);
-				
-				// convert to ASCII char
-				char c = (char) memBytes[i];
-				if((c>='0' && c<='9') || (c>='a' && c<='z') || (c>='A' && c<='Z'))
-					list[i][2]=String.valueOf(c);
-			}
+		byte[] memBytes = clientRunner.getMemBytes();
+		String[][] list = new String[memBytes.length][3];
+		for(int i=0;i<list.length;++i){
+			list[i][0]=String.valueOf(i);
+			list[i][1]=String.valueOf(memBytes[i]);
 			
-			// set memory table
-			memoryTable.setModel(new DefaultTableModel(
-					list,
-					new String[] {
-							"Byte #", "Value", "ASCII"
-					}
-				));
-			
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// convert to ASCII char
+			char c = (char) memBytes[i];
+			if((c>='0' && c<='9') || (c>='a' && c<='z') || (c>='A' && c<='Z'))
+				list[i][2]=String.valueOf(c);
 		}
+		
+		// set memory table
+		memoryTable.setModel(new DefaultTableModel(
+				list,
+				new String[] {
+						"Byte #", "Value", "ASCII"
+				}
+			));
 	}
 	
 // ---------------------------- Set & Get ---------------------------------------
@@ -265,14 +159,20 @@ public class MainFrame extends JFrame {
 	
 	public void setOutputText(String text){
 		textPnOutput.setText(text);
-	}	
+	}
+	
+	public void setIsReady(boolean isReady){
+		this.isReady=isReady;
+	}
+	
+	public void setIsUserChange(boolean isUserChange){
+		this.isUserChange=isUserChange;
+	}
 	
 // --------------------- constructor of frame ------------------------------
 
 	public MainFrame() {
 		
-		// establish link
-		linkToServer();
 		
 		JFrame frame = new JFrame("BF Client");
 		frame.setVisible(true);
@@ -381,9 +281,6 @@ public class MainFrame extends JFrame {
 		
 		
 		
-		
-		
-		
 		memoryTable = new JTable();
 		memoryTable.setBounds(720, 37, 256, 600);
 		memoryTable.setFont(new Font("宋体", Font.PLAIN, 20));
@@ -476,9 +373,8 @@ public class MainFrame extends JFrame {
 		scrollPane_1.setBounds(15, 37, 661, 339);
 		contentPane.add(scrollPane_1);
 		
-		// init code history
-		initCodeHistory();
-		initFileController();
+		clientRunner = new ClientRunner(getEditorCode());
+		isReady=true;
 	}	
 }
 
