@@ -17,6 +17,7 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -28,11 +29,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
-import javafx.scene.layout.Border;
-
 import java.awt.event.InputMethodListener;
 import java.awt.event.InputMethodEvent;
-import javax.swing.JScrollBar;
 
 public class MainFrame extends JFrame {
 
@@ -55,6 +53,7 @@ public class MainFrame extends JFrame {
 	private boolean isReady=false;
 	private boolean isUserChange=true;
 	
+	private FileVersionController fvc;
 	
 	
 // --------------------------------------------------------------------------		
@@ -152,37 +151,48 @@ public class MainFrame extends JFrame {
 
 // ---------------------------------------------------------------------
 	
-// ---------------------------- code IO --------------------------------------
+// ---------------------------- file version controller --------------------------------------
 	
 	// check all code of user
 	// select a code file to open
-	private void checkAllCode(){		
+	
+	private void initFileController(){
+		fvc = new FileVersionController(remoteHelper.getIOService());
+	}
+	
+	// check all code files
+	// select a file to open
+	private void checkAllCode(){
 		if(!isLogin){
 			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		
-		try {
-			String[] files = remoteHelper.getIOService().readFileList(account).split(",");
-			StringBuffer sb = new StringBuffer();
-			sb.append("Select a file: \r\n");
-			for(int i=0;i<files.length;++i){
-				sb.append(i);
-				sb.append(":  ");
-				sb.append(files[i]);
-				sb.append("\r\n");
-			}
-			int selectFile;
-			do{
-				selectFile = Integer.parseInt(JOptionPane.showInputDialog(null,sb.toString()));
-			}while(selectFile<0 || selectFile>files.length);
-			
-			txtpnEditor.setText(remoteHelper.getIOService().readFile(account, files[selectFile]));
-			
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		ArrayList<FileVersion> fv= fvc.getAllFileVersion(account);
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("Select a file: \r\n");
+		for(int i=0;i<fv.size();++i){
+			sb.append(i);
+			sb.append(":  ");
+			sb.append(fv.get(i).getName());
+			sb.append("   ");
+			sb.append(fv.get(i).getPostfix());
+			sb.append(" File   ");
+			sb.append(fv.get(i).getDate());
+			sb.append("\r\n");
 		}
+		
+		String input;
+		int selectFile = -1;
+		do{
+			input=JOptionPane.showInputDialog(null,sb.toString());
+			if(input.equals("") || input==null)
+				continue;
+			selectFile = Integer.parseInt(input);
+		}while(selectFile<0 || selectFile>fv.size());
+		
+		setEditorCode(fv.get(selectFile).getContent(remoteHelper.getIOService()));
 	}
 
 	
@@ -191,15 +201,15 @@ public class MainFrame extends JFrame {
 			JOptionPane.showMessageDialog(null, "Please login!", "", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
-		
 		String fileName=JOptionPane.showInputDialog(null,"Input a file name: ");
-		try {
-			remoteHelper.getIOService().writeFile(getEditorCode(), account, fileName);
-			JOptionPane.showMessageDialog(null, "File saved!", "Success", JOptionPane.WARNING_MESSAGE);
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String code = getEditorCode();
+		String postfix;
+		if(code.contains("Ook"))
+			postfix="OOK";
+		else
+			postfix="BF";
+		fvc.writeFile(account, fileName, code, postfix);
+		JOptionPane.showMessageDialog(null, "File save successful.", "File saved", JOptionPane.INFORMATION_MESSAGE);
 	}
 	
 // -----------------------------------------------------------------------------
@@ -468,7 +478,7 @@ public class MainFrame extends JFrame {
 		
 		// init code history
 		initCodeHistory();
-		
+		initFileController();
 	}	
 }
 

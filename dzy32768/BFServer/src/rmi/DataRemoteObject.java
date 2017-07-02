@@ -25,15 +25,15 @@ public class DataRemoteObject extends UnicastRemoteObject implements IOService, 
 	}
 
 	@Override
-	public boolean writeFile(String file, String userId, String fileName) throws RemoteException{
+	public boolean writeFile(String file, String userId, String fileName, String postfix) throws RemoteException{
 		// TODO Auto-generated method stub
-		return iOService.writeFile(file, userId, fileName);
+		return iOService.writeFile(file, userId, fileName, postfix);
 	}
 
 	@Override
-	public String readFile(String userId, String fileName) throws RemoteException{
+	public String readFile(String userId, String fileName, String postfix) throws RemoteException{
 		// TODO Auto-generated method stub
-		return iOService.readFile(userId, fileName);
+		return iOService.readFile(userId, fileName, postfix);
 	}
 
 	@Override

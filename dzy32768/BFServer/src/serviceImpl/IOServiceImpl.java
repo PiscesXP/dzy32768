@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import runner.ServerRunner;
 import service.IOService;
@@ -14,22 +16,16 @@ import service.IOService;
 
 public class IOServiceImpl implements IOService{
 	
-	// test 
-	// past
-	
-	public static void main(String[] args) {
-		IOServiceImpl i = new IOServiceImpl();
-		i.writeFile("test write\r\n15165516","147258369","Hello");
-		i.writeFile("test write 2","147258369","abcd");
-		System.out.println(i.readFile("147258369", "Hello"));
-		System.out.println(i.readFileList("147258369"));
-	}
-
 	public static final String PATH = "D:/BF/";
 	
+	// account_name_date.BF
+	
 	@Override
-	public boolean writeFile(String file, String userId, String fileName) {
-		File f = new File(PATH + userId + "_" + fileName + ".txt");
+	public boolean writeFile(String file, String userId, String fileName,String postfix) {
+		Date now = new Date(); 
+		String currentTime = now.toString().replaceAll(":", " ");
+		
+		File f = new File(PATH + userId + "_" + fileName + "_" + currentTime + "." + postfix);
 		try {
 			FileWriter fw = new FileWriter(f, false);
 			fw.write(file);
@@ -43,9 +39,9 @@ public class IOServiceImpl implements IOService{
 	}
 
 	@Override
-	public String readFile(String userId, String fileName) {
+	public String readFile(String userId, String fileName,String postfix) {
 		// TODO Auto-generated method stub
-		fileName = PATH + userId + "_" + fileName + ".txt";
+		fileName = PATH + userId + "_" + fileName + "." + postfix;
 		String line,text="";
 		try {
 			File file = new File(fileName);
@@ -78,11 +74,11 @@ public class IOServiceImpl implements IOService{
 			if(fileName.contains(userId + "_")){
 				if(!list.equals(""))
 					list=list + ",";
-				list = list + fileName.substring(fileName.indexOf("_")+1);
+				list = list + fileName;
 			}
 			
 		}
-		return list.replace(".txt", "");
+		return list;
 	}
 	
 }
