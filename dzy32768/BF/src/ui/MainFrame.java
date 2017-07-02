@@ -47,10 +47,19 @@ public class MainFrame extends JFrame {
 	
 	private ClientRunner clientRunner;	
 	
+	// check if it's user input
 	private boolean isReady=false;
 	private boolean isUserChange=true;
 	
-
+// --------------------------------------------------------------------------	
+	/**
+	 * init after construct the frame
+	 * */
+	private void initRunner(){
+		clientRunner = new ClientRunner(getEditorCode());
+		isReady=true;
+	}
+	
 // --------------------------------------------------------------------------
 		
 	// execute
@@ -118,22 +127,9 @@ public class MainFrame extends JFrame {
 // ------------------------ Memory Table ---------------------------------------
 	
 	private void updateTable(){
-		
-		byte[] memBytes = clientRunner.getMemBytes();
-		String[][] list = new String[memBytes.length][3];
-		for(int i=0;i<list.length;++i){
-			list[i][0]=String.valueOf(i);
-			list[i][1]=String.valueOf(memBytes[i]);
-			
-			// convert to ASCII char
-			char c = (char) memBytes[i];
-			if((c>='0' && c<='9') || (c>='a' && c<='z') || (c>='A' && c<='Z'))
-				list[i][2]=String.valueOf(c);
-		}
-		
 		// set memory table
 		memoryTable.setModel(new DefaultTableModel(
-				list,
+				clientRunner.getMemTableList(),
 				new String[] {
 						"Byte #", "Value", "ASCII"
 				}
@@ -174,10 +170,11 @@ public class MainFrame extends JFrame {
 	public MainFrame() {
 		
 		
-		JFrame frame = new JFrame("BF Client");
-		frame.setVisible(true);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setBounds(560, 240, 1024, 768);
+		JFrame frmBfookClient = new JFrame("BF Client");
+		frmBfookClient.setTitle("BF/OOK Client");
+		frmBfookClient.setVisible(true);
+		frmBfookClient.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmBfookClient.setBounds(560, 240, 1024, 768);
 		
 		
 		JMenuBar menuBar = new JMenuBar();
@@ -231,7 +228,7 @@ public class MainFrame extends JFrame {
 			}
 		});
 		mnUser.add(mntmMycode);
-		frame.setJMenuBar(menuBar);
+		frmBfookClient.setJMenuBar(menuBar);
 		
 		contentPane = new JPanel();
 		contentPane.setBackground(Color.GRAY);
@@ -338,7 +335,7 @@ public class MainFrame extends JFrame {
 		labelUserName.setBounds(279, 655, 397, 31);
 		contentPane.add(labelUserName);
 		
-		frame.setContentPane(contentPane);
+		frmBfookClient.setContentPane(contentPane);
 		
 		JButton btnUndo = new JButton("UNDO");
 		btnUndo.addActionListener(new ActionListener() {
@@ -373,8 +370,8 @@ public class MainFrame extends JFrame {
 		scrollPane_1.setBounds(15, 37, 661, 339);
 		contentPane.add(scrollPane_1);
 		
-		clientRunner = new ClientRunner(getEditorCode());
-		isReady=true;
+		
+		initRunner();
 	}	
 }
 

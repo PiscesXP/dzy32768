@@ -12,7 +12,6 @@ public class FileVersion {
 	private String name;	//file name
 	private String date;
 	private String postfix;
-	private String fullFileName;
 	/*
 	FileVersion(String account,String name,String date){
 		this.account=account;
@@ -21,7 +20,6 @@ public class FileVersion {
 	}
 	*/
 	FileVersion (String fullFileName){
-		this.fullFileName=fullFileName;
 		// auto parse
 		this.postfix=fullFileName.substring(fullFileName.indexOf('.')+1);
 		String names[] = fullFileName.substring(0, fullFileName.indexOf('.')).split("_");

@@ -23,6 +23,7 @@ public class ClientRunner {
 	
 	private FileVersionController fvc;
 	
+// ------------------------------ init --------------------------------------------
 	
 	public static void main(String[] args){
 		MainFrame mainFrame = new MainFrame();
@@ -65,16 +66,31 @@ public class ClientRunner {
 		return null;
 	}
 	
-	public byte[] getMemBytes(){
+	
+	/**
+	 * output memory table as String[n][3]
+	 * */
+	public String[][] getMemTableList(){
+		byte[] memBytes;
+		String[][] list=null;
 		try {
-			return remoteHelper.getExecuteService().getMemBytes();
+			memBytes = remoteHelper.getExecuteService().getMemBytes();
+			list = new String[memBytes.length][3];
+			for(int i=0;i<list.length;++i){
+				list[i][0]=String.valueOf(i);
+				list[i][1]=String.valueOf(memBytes[i]);
+				
+				// convert to ASCII char
+				char c = (char) memBytes[i];
+				if((c>='0' && c<='9') || (c>='a' && c<='z') || (c>='A' && c<='Z'))
+					list[i][2]=String.valueOf(c);
+			}
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return null;
+		return list;
 	}
-	
 	
 	
 // --------------------------  login logout ----------------------------------------
